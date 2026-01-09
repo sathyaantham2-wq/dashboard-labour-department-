@@ -1,0 +1,8 @@
+{
+  "name": "Telangana Labour Department Unified Dashboard",
+  "description": "A comprehensive monitoring platform for the Telangana Labour Department, integrating BOCW welfare schemes, shops registration, and case management with role-based hierarchies and AI-driven insights.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
