@@ -21,13 +21,23 @@ const INITIAL_USERS: UserAccount[] = [
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
-    const saved = localStorage.getItem('labour_session');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('labour_session');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      console.error("Session load error:", e);
+      return null;
+    }
   });
   
   const [users, setUsers] = useState<UserAccount[]>(() => {
-    const saved = localStorage.getItem('labour_users');
-    return saved ? JSON.parse(saved) : INITIAL_USERS;
+    try {
+      const saved = localStorage.getItem('labour_users');
+      return saved ? JSON.parse(saved) : INITIAL_USERS;
+    } catch (e) {
+      console.error("User list load error:", e);
+      return INITIAL_USERS;
+    }
   });
 
   const [data, setData] = useState<DashboardState | null>(null);
@@ -56,6 +66,13 @@ const App: React.FC = () => {
 
   const stats = useMemo(() => {
     if (!data) return [];
+    
+    // Safeguard division by zero for shop compliance
+    const shopCount = data.shopData.length;
+    const avgCompliance = shopCount > 0 
+      ? Math.round(data.shopData.reduce((acc, d) => acc + d.returnsCompliance, 0) / shopCount) 
+      : 0;
+
     return [
       { 
         title: 'BOCW Pendency', 
@@ -73,7 +90,7 @@ const App: React.FC = () => {
       },
       { 
         title: 'Compliance Rate', 
-        value: `${Math.round(data.shopData.reduce((acc, d) => acc + d.returnsCompliance, 0) / data.shopData.length)}%`,
+        value: `${avgCompliance}%`,
         subtitle: 'Average returns filed',
         icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>,
       },
@@ -92,13 +109,11 @@ const App: React.FC = () => {
   };
 
   const handleMonthlySummarySubmit = (record: MonthlySummaryRecord) => {
-    console.log('Submitting ALO Monthly Summary:', record);
     alert(`Monthly Summary for ${record.month} ${record.year} submitted successfully.`);
     setActiveTab('dashboard');
   };
 
   const handleACLActSummarySubmit = (report: ACLActSummaryReport) => {
-    console.log('Submitting ACL Act Summary:', report);
     alert(`Act-wise Summary for ${report.month} ${report.year} submitted successfully.`);
     setActiveTab('dashboard');
   };
@@ -108,10 +123,12 @@ const App: React.FC = () => {
   }
 
   if (!data && currentUser.role !== UserRole.ADMIN) {
-    return <div className="p-10 text-center flex flex-col items-center justify-center min-h-screen space-y-4">
-      <div className="animate-spin h-8 w-8 border-4 border-slate-900 border-t-transparent rounded-full"></div>
-      <p className="font-bold text-slate-900 uppercase tracking-widest text-xs">Departmental Data Synchronization Active</p>
-    </div>;
+    return (
+      <div className="p-10 text-center flex flex-col items-center justify-center min-h-screen space-y-4">
+        <div className="animate-spin h-8 w-8 border-4 border-slate-900 border-t-transparent rounded-full"></div>
+        <p className="font-bold text-slate-900 uppercase tracking-widest text-xs">Departmental Data Synchronization Active</p>
+      </div>
+    );
   }
 
   const isDataEntryEnabled = currentUser.role === UserRole.ALO || currentUser.role === UserRole.ACL;
@@ -121,7 +138,7 @@ const App: React.FC = () => {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`text-white p-2 rounded-lg ${ROLES_CONFIG[currentUser.role].color}`}>
+            <div className={`text-white p-2 rounded-lg ${ROLES_CONFIG[currentUser.role]?.color || 'bg-slate-600'}`}>
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/></svg>
             </div>
             <div>
@@ -161,7 +178,7 @@ const App: React.FC = () => {
             </nav>
             <div className="hidden lg:block text-right">
               <p className="text-sm font-bold text-slate-900 leading-tight">{currentUser.name}</p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{ROLES_CONFIG[currentUser.role].label}</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{ROLES_CONFIG[currentUser.role]?.label}</p>
             </div>
             <button 
               onClick={handleLogout}
@@ -203,7 +220,7 @@ const App: React.FC = () => {
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Departmental Intelligence</h2>
-                <p className="text-slate-500 font-medium">{currentUser.jurisdiction} • {ROLES_CONFIG[currentUser.role].label}</p>
+                <p className="text-slate-500 font-medium">{currentUser.jurisdiction} • {ROLES_CONFIG[currentUser.role]?.label}</p>
               </div>
               <div className="flex gap-2">
                 {isDataEntryEnabled && (
