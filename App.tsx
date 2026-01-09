@@ -25,7 +25,6 @@ const App: React.FC = () => {
       const saved = localStorage.getItem('labour_session');
       return saved ? JSON.parse(saved) : null;
     } catch (e) {
-      console.error("Session load error:", e);
       return null;
     }
   });
@@ -35,7 +34,6 @@ const App: React.FC = () => {
       const saved = localStorage.getItem('labour_users');
       return saved ? JSON.parse(saved) : INITIAL_USERS;
     } catch (e) {
-      console.error("User list load error:", e);
       return INITIAL_USERS;
     }
   });
@@ -67,7 +65,6 @@ const App: React.FC = () => {
   const stats = useMemo(() => {
     if (!data) return [];
     
-    // Safeguard division by zero for shop compliance
     const shopCount = data.shopData.length;
     const avgCompliance = shopCount > 0 
       ? Math.round(data.shopData.reduce((acc, d) => acc + d.returnsCompliance, 0) / shopCount) 
@@ -131,6 +128,7 @@ const App: React.FC = () => {
     );
   }
 
+  const roleConfig = ROLES_CONFIG[currentUser.role] || { label: 'Officer', color: 'bg-slate-600' };
   const isDataEntryEnabled = currentUser.role === UserRole.ALO || currentUser.role === UserRole.ACL;
 
   return (
@@ -138,7 +136,7 @@ const App: React.FC = () => {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`text-white p-2 rounded-lg ${ROLES_CONFIG[currentUser.role]?.color || 'bg-slate-600'}`}>
+            <div className={`text-white p-2 rounded-lg ${roleConfig.color}`}>
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/></svg>
             </div>
             <div>
@@ -178,7 +176,7 @@ const App: React.FC = () => {
             </nav>
             <div className="hidden lg:block text-right">
               <p className="text-sm font-bold text-slate-900 leading-tight">{currentUser.name}</p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{ROLES_CONFIG[currentUser.role]?.label}</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{roleConfig.label}</p>
             </div>
             <button 
               onClick={handleLogout}
@@ -220,7 +218,7 @@ const App: React.FC = () => {
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Departmental Intelligence</h2>
-                <p className="text-slate-500 font-medium">{currentUser.jurisdiction} • {ROLES_CONFIG[currentUser.role]?.label}</p>
+                <p className="text-slate-500 font-medium">{currentUser.jurisdiction} • {roleConfig.label}</p>
               </div>
               <div className="flex gap-2">
                 {isDataEntryEnabled && (

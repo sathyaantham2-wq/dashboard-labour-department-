@@ -3,9 +3,15 @@ import { GoogleGenAI } from "@google/genai";
 import { DashboardState } from "../types";
 
 export const getActionableIntelligence = async (data: DashboardState): Promise<string> => {
-  /* Handle process check for browser environments to prevent white-screen crashes */
-  const apiKey = typeof process !== 'undefined' ? process.env.API_KEY : '';
-  const ai = new GoogleGenAI({ apiKey: apiKey || "" });
+  /* Safely obtain API key from the environment */
+  let apiKey = "";
+  try {
+    apiKey = (typeof process !== 'undefined' && process.env && process.env.API_KEY) ? process.env.API_KEY : "";
+  } catch (e) {
+    console.warn("API Key access check failed, using empty default.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   const prompt = `
     As a senior policy analyst for the Labour Department of Telangana, analyze the following dashboard data for a ${data.role} in ${data.jurisdiction}.
@@ -37,6 +43,6 @@ export const getActionableIntelligence = async (data: DashboardState): Promise<s
     return response.text || "Unable to generate intelligence report at this time.";
   } catch (error) {
     console.error("Gemini Error:", error);
-    return "Error connecting to AI intelligence services.";
+    return "The AI intelligence module is currently undergoing maintenance or the API key is invalid. Please try again later.";
   }
 };
